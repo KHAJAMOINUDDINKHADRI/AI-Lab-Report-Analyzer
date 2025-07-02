@@ -1,11 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextApiRequest, NextApiResponse } from "next";
 
-export async function POST(request: NextRequest) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
   try {
-    const body = await request.json();
-    const { text } = body;
+    const { text } = req.body;
     if (!text) {
-      return NextResponse.json({ error: "Missing text" }, { status: 400 });
+      return res.status(400).json({ error: "Missing text" });
     }
 
     const prompt = `Given the following lab report text, extract:
@@ -51,36 +56,38 @@ Respond in JSON with this structure:
 
     if (!response.ok) {
       const error = await response.text();
-      return NextResponse.json({ error }, { status: response.status });
+      return res.status(response.status).json({ error });
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "";
-    // Try to parse the JSON from the model's response
     let result: unknown;
     try {
-      result = JSON.parse(content);
-    } catch {
-      // Try to extract JSON from the response if it's surrounded by text
-      const match = content.match(/\{[\s\S]*\}/);
+      // Remove code block markers if present
+      const cleaned = content.replace(/```json|```/g, "").trim();
+      const match = cleaned.match(/\{[\s\S]*\}/);
       if (match) {
         result = JSON.parse(match[0]);
       } else {
-        return NextResponse.json(
-          { error: "Failed to parse AI response" },
-          { status: 500 }
-        );
+        return res
+          .status(500)
+          .json({ error: "Failed to parse AI response", raw: content });
       }
+    } catch (e: any) {
+      return res
+        .status(500)
+        .json({
+          error: "Failed to parse AI response",
+          raw: content,
+          parseError: e.message,
+        });
     }
     if (result && typeof result === "object" && !Array.isArray(result)) {
-      return NextResponse.json({ success: true, ...result });
+      return res.status(200).json({ success: true, ...result });
     } else {
-      return NextResponse.json({ success: true, result });
+      return res.status(200).json({ success: true, result });
     }
-  } catch (error: unknown) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || "Unknown error" });
   }
 }
