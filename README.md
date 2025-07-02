@@ -4,7 +4,7 @@ A modern web application to extract, organize, and understand your medical lab r
 
 ## 🌐 Live Demo
 
-Try it now: [AI-Lab-Report-Analyzer Live Demo](#)
+Try it now: [Live Demo](https://ai-report-analyzer.netlify.app)
 
 ## Features
 
