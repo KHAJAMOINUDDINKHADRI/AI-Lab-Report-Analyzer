@@ -53,7 +53,9 @@ export default async function handler(
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "";
     return res.status(200).json({ recommendation: content });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || "Unknown error" });
+  } catch (error: unknown) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 }

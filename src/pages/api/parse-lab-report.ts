@@ -73,21 +73,21 @@ Respond in JSON with this structure:
           .status(500)
           .json({ error: "Failed to parse AI response", raw: content });
       }
-    } catch (e: any) {
-      return res
-        .status(500)
-        .json({
-          error: "Failed to parse AI response",
-          raw: content,
-          parseError: e.message,
-        });
+    } catch (e: unknown) {
+      return res.status(500).json({
+        error: "Failed to parse AI response",
+        raw: content,
+        parseError: e instanceof Error ? e.message : String(e),
+      });
     }
     if (result && typeof result === "object" && !Array.isArray(result)) {
       return res.status(200).json({ success: true, ...result });
     } else {
       return res.status(200).json({ success: true, result });
     }
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || "Unknown error" });
+  } catch (error: unknown) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 }
