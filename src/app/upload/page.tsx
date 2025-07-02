@@ -61,6 +61,7 @@ export default function UploadPage() {
         return;
       }
       // Send OCR text to API
+      console.log(fullText)
       const response = await fetch("/api/parse-lab-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
