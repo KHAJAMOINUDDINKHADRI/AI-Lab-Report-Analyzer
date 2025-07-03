@@ -1,23 +1,24 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+export async function POST(request: NextRequest) {
   try {
-    const { userInfo, testData } = req.body;
+    const body = await request.json();
+    const { userInfo, testData } = body;
     if (!userInfo || !testData) {
-      return res.status(400).json({ error: "Missing userInfo or testData" });
+      return NextResponse.json(
+        { error: "Missing userInfo or testData" },
+        { status: 400 }
+      );
     }
 
-    const prompt = `Given the following patient information and lab test results, provide a concise, friendly, and actionable health recommendation or summary for the patient. If any values are out of range, mention them and suggest what to discuss with a doctor. Respond in markdown.\n\nPatient Information:\n${JSON.stringify(
-      userInfo,
-      null,
-      2
-    )}\n\nTest Results:\n${JSON.stringify(testData, null, 2)}\n`;
+    const prompt = `Given the following patient information and lab test results, provide a concise, friendly, and actionable health recommendation or summary for the patient. If any values are out of range, mention them and suggest what to discuss with a doctor. Respond in markdown.
+
+Patient Information:
+${JSON.stringify(userInfo, null, 2)}
+
+Test Results:
+${JSON.stringify(testData, null, 2)}
+`;
 
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
@@ -47,15 +48,16 @@ export default async function handler(
 
     if (!response.ok) {
       const error = await response.text();
-      return res.status(response.status).json({ error });
+      return NextResponse.json({ error }, { status: response.status });
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "";
-    return res.status(200).json({ recommendation: content });
+    return NextResponse.json({ recommendation: content });
   } catch (error: unknown) {
-    return res.status(500).json({
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
   }
 }
